@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --surface2: #f4f3f0;
+  --border: #e8e6e0;
+  --border2: #d4d1c9;
+  --ink: #1a1916;
+  --ink2: #3d3b35;
+  --ink3: #8a877e;
+  --ink4: #b8b5ac;
+  --gold: #c9a84c;
+  --gold-light: #fdf6e3;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --red: #dc2626;
+  --green: #16a34a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Epilogue', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ═══ TOP BAR ═══ */
+.topbar {
+  height: 60px;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-name {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.brand-name em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.brand-rule {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.15);
+}
+
+.brand-sub {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tbtn {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 16px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+}
+
+.tbtn-ghost {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.tbtn-ghost:hover { background: rgba(255,255,255,0.14); color: #fff; }
+
+.tbtn-gold {
+  background: var(--gold);
+  color: #1a1916;
+  font-weight: 700;
+}
+.tbtn-gold:hover { background: #d4a940; box-shadow: 0 0 0 3px rgba(201,168,76,0.25); }
+
+/* ═══ LAYOUT ═══ */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: calc(100vh - 60px);
+}
+
+/* ═══ PANEL ═══ */
+.panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+  overflow-y: auto;
+}
+
+.panel-section {
+  padding: 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-section:last-child { border-bottom: none; }
+
+.p-head {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin-bottom: 14px;
+}
+
+/* Title */
+.title-inp {
+  width: 100%;
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  border: none;
+  border-bottom: 2px solid var(--border);
+  padding: 6px 0;
+  background: transparent;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.title-inp:focus { border-bottom-color: var(--gold); }
+.title-inp::placeholder { color: var(--ink4); font-weight: 400; }
+
+/* Days list */
+.days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  transition: border-color 0.12s;
+}
+.day-row:focus-within { border-color: var(--gold); background: var(--gold-light); }
+
+.day-row-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink4);
+  min-width: 16px;
+}
+
+.day-inp {
+  flex: 1;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+}
+.day-inp::placeholder { color: var(--ink4); font-weight: 300; }
+
+.day-del {
+  background: none;
+  border: none;
+  color: var(--ink4);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  opacity: 0;
+}
+.day-row:hover .day-del { opacity: 1; }
+.day-del:hover { background: #fee2e2; color: var(--red); }
+
+.add-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 7px;
+  border: 1.5px dashed var(--border2);
+  background: transparent;
+  color: var(--ink3);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.add-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
+
+/* Times list */
+.times-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  transition: border-color 0.12s;
+}
+.time-row:focus-within { border-color: var(--blue); background: var(--blue-light); }
+
+.time-inp {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+}
+.time-inp::placeholder { color: var(--ink4); font-weight: 300; font-family: 'Epilogue', sans-serif; }
+
+.time-del {
+  background: none;
+  border: none;
+  color: var(--ink4);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  opacity: 0;
+}
+.time-row:hover .time-del { opacity: 1; }
+.time-del:hover { background: #fee2e2; color: var(--red); }
+
+/* Subjects */
+.subjects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.sub-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.12s;
+  background: var(--bg);
+}
+.sub-item:hover { border-color: var(--border2); }
+.sub-item.selected {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px rgba(26,25,22,0.12);
+}
+
+.sub-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sub-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sub-del {
+  background: none;
+  border: none;
+  color: var(--ink4);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  opacity: 0;
+}
+.sub-item:hover .sub-del { opacity: 1; }
+.sub-del:hover { background: #fee2e2; color: var(--red); }
+
+.sub-add-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sub-color-pick {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.sub-color-pick:hover { border-color: var(--ink); }
+.sub-color-pick input[type="color"] {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%; border: none;
+}
+
+.sub-name-inp {
+  flex: 1;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  color: var(--ink);
+  padding: 0 12px;
+  height: 34px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sub-name-inp:focus { border-color: var(--ink); background: var(--surface); }
+.sub-name-inp::placeholder { color: var(--ink4); }
+
+.sub-add-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sub-add-btn:hover { background: var(--blue); }
+
+/* Selected indicator */
+.active-sub-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--ink);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+}
+.active-sub-bar.show { display: flex; }
+.active-sub-color {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.active-sub-name {
+  flex: 1;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+}
+.deselect-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  transition: background 0.12s;
+}
+.deselect-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ═══ CANVAS AREA ═══ */
+.canvas {
+  padding: 36px 40px;
+  overflow: auto;
+}
+
+.canvas-header {
+  margin-bottom: 24px;
+}
+
+.canvas-title {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.canvas-title em { font-style: italic; color: var(--ink3); }
+
+.canvas-sub {
+  font-size: 12px;
+  color: var(--ink3);
+  font-weight: 400;
+}
+
+/* HINT */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--gold-light);
+  border: 1px solid #e8d9a0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 12px;
+  color: #7a6020;
+  font-weight: 500;
+}
+
+/* TABLE */
+.table-wrap {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(26,25,22,0.06), 0 1px 3px rgba(26,25,22,0.04);
+  background: var(--surface);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Column widths */
+.col-time { width: 110px; }
+
+/* Head row */
+thead tr {
+  background: var(--ink);
+}
+
+thead th {
+  padding: 0;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  vertical-align: middle;
+}
+thead th:last-child { border-right: none; }
+
+.th-time-cell {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  gap: 6px;
+}
+.th-time-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Epilogue', sans-serif;
+}
+
+.th-day-inp {
+  width: 100%;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #fff;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  outline: none;
+  text-align: center;
+  padding: 10px 8px;
+  transition: border-color 0.15s;
+}
+.th-day-inp::placeholder { color: rgba(255,255,255,0.2); font-weight: 300; }
+.th-day-inp:focus { border-bottom-color: var(--gold); }
+
+/* Body */
+tbody tr {
+  transition: background 0.1s;
+}
+tbody tr:hover { background: #faf9f6; }
+tbody tr:last-child td { border-bottom: none; }
+
+.td-time {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  vertical-align: middle;
+  padding: 0;
+}
+
+.time-cell-inp {
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink2);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 16px;
+  text-align: center;
+  transition: color 0.15s;
+}
+.time-cell-inp:focus { color: var(--ink); }
+.time-cell-inp::placeholder { color: var(--ink4); font-family: 'Epilogue', sans-serif; font-size: 11px; }
+
+.td-slot {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s;
+  vertical-align: middle;
+  height: 56px;
+}
+.td-slot:last-child { border-right: none; }
+.td-slot:hover:not(.filled) { background: var(--gold-light); }
+.td-slot:hover:not(.filled)::after {
+  content: '+';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  color: var(--gold);
+  opacity: 0.5;
+}
+
+/* Filled slot */
+.slot-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 4px 8px;
+  position: relative;
+}
+
+.slot-text {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.slot-x {
+  position: absolute;
+  top: 4px; right: 5px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.2);
+  color: inherit;
+  transition: background 0.12s;
+}
+.td-slot.filled:hover .slot-x { display: flex; }
+.slot-x:hover { background: rgba(0,0,0,0.4); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--ink); color: #fff;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px; font-weight: 500;
+  padding: 11px 22px; border-radius: 50px;
+  box-shadow: 0 8px 32px rgba(26,25,22,0.25);
+  z-index: 300;
+  transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* SPIN */
+.spin {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: rgba(26,25,22,0.8);
+  border-radius: 50%;
+  animation: rot 0.7s linear infinite;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* ANIMATE */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.table-wrap { animation: fadeUp 0.4s ease both; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-name">Sched<em>·</em>ule</span>
+    <div class="brand-rule"></div>
+    <span class="brand-sub">Builder</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="tbtn tbtn-ghost" onclick="clearGrid()">Clear Grid</button>
+    <button class="tbtn tbtn-ghost" onclick="resetToDefault()">Reset</button>
+    <button class="tbtn tbtn-gold" id="exportBtn" onclick="exportPDF(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export PDF
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- PANEL -->
+  <aside class="panel">
+
+    <!-- Title -->
+    <div class="panel-section">
+      <div class="p-head">Schedule Title</div>
+      <input class="title-inp" id="schedTitle" type="text" placeholder="My Weekly Schedule" value="My Weekly Schedule" oninput="updateTitle()" />
+    </div>
+
+    <!-- Days (columns) -->
+    <div class="panel-section">
+      <div class="p-head">Days (Columns)</div>
+      <div class="days-list" id="daysList"></div>
+      <button class="add-btn" onclick="addDay()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Day
+      </button>
+    </div>
+
+    <!-- Times (rows) -->
+    <div class="panel-section">
+      <div class="p-head">Time Slots (Rows)</div>
+      <div class="times-list" id="timesList"></div>
+      <button class="add-btn" onclick="addTime()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Time Slot
+      </button>
+    </div>
+
+    <!-- Subjects -->
+    <div class="panel-section">
+      <div class="p-head">Subjects</div>
+
+      <div class="active-sub-bar" id="activeSubBar">
+        <div class="active-sub-color" id="activeSubColor"></div>
+        <span class="active-sub-name" id="activeSubName"></span>
+        <button class="deselect-btn" onclick="deselectSubject()">Deselect</button>
+      </div>
+
+      <div class="subjects-list" id="subjectsList"></div>
+      <div class="sub-add-form">
+        <div class="sub-color-pick" id="colorSwatch" style="background:#2563eb">
+          <input type="color" id="colorPicker" value="#2563eb" oninput="document.getElementById('colorSwatch').style.background=this.value" />
+        </div>
+        <input class="sub-name-inp" id="subNameInp" type="text" placeholder="Subject name…" />
+        <button class="sub-add-btn" onclick="addSubject()">+</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CANVAS -->
+  <div class="canvas">
+    <div class="canvas-header">
+      <div class="canvas-title" id="canvasTitle">My Weekly Schedule</div>
+      <div class="canvas-sub" id="canvasSub"></div>
+    </div>
+
+    <div class="hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Type custom day names & times directly in the table headers. Select a subject, then click any cell.
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table id="schedTable">
+        <thead id="schedHead"></thead>
+        <tbody id="schedBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── STATE ── */
+let days     = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+let times    = ['8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'];
+let subjects = [
+  {name:'Mathematics', color:'#2563eb'},
+  {name:'English',     color:'#c2410c'},
+  {name:'Science',     color:'#16a34a'},
+  {name:'History',     color:'#7c3aed'},
+  {name:'Art',         color:'#db2777'},
+];
+let grid     = {};
+let activeSubIdx = null;
+
+function load() {
+  const d = localStorage.getItem('sb_days');
+  const t = localStorage.getItem('sb_times');
+  const s = localStorage.getItem('sb_subjects');
+  const g = localStorage.getItem('sb_grid');
+  if (d) days     = JSON.parse(d);
+  if (t) times    = JSON.parse(t);
+  if (s) subjects = JSON.parse(s);
+  if (g) grid     = JSON.parse(g);
+}
+
+function save() {
+  localStorage.setItem('sb_days',     JSON.stringify(days));
+  localStorage.setItem('sb_times',    JSON.stringify(times));
+  localStorage.setItem('sb_subjects', JSON.stringify(subjects));
+  localStorage.setItem('sb_grid',     JSON.stringify(grid));
+}
+
+function tc(hex) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return (r*299+g*587+b*114)/1000 > 145 ? '#1a1916' : '#ffffff';
+}
+
+/* ── TITLE ── */
+function updateTitle() {
+  const v = document.getElementById('schedTitle').value || 'My Weekly Schedule';
+  document.getElementById('canvasTitle').textContent = v;
+}
+
+/* ── DAYS PANEL ── */
+function renderDaysPanel() {
+  const list = document.getElementById('daysList');
+  list.innerHTML = '';
+  days.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    row.innerHTML = `
+      <span class="day-row-num">${i+1}</span>
+      <input class="day-inp" type="text" value="${d}" placeholder="Day ${i+1}" />
+      <button class="day-del" title="Remove">×</button>
+    `;
+    row.querySelector('.day-inp').addEventListener('input', e => {
+      days[i] = e.target.value;
+      // Update header cell live
+      const inp = document.querySelector(`[data-day-col="${i}"]`);
+      if (inp) inp.value = e.target.value;
+      // Remap grid keys
+      save();
+    });
+    row.querySelector('.day-del').addEventListener('click', () => {
+      if (days.length === 1) { showToast('Need at least one day'); return; }
+      const old = days[i];
+      days.splice(i, 1);
+      // Remove grid entries for this day
+      Object.keys(grid).forEach(k => { if (k.startsWith(old+'|')) delete grid[k]; });
+      save(); renderAll();
+    });
+    list.appendChild(row);
+  });
+}
+
+function addDay() {
+  days.push('');
+  save(); renderAll();
+  // Focus last day input
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.day-inp');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+/* ── TIMES PANEL ── */
+function renderTimesPanel() {
+  const list = document.getElementById('timesList');
+  list.innerHTML = '';
+  times.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'time-row';
+    row.innerHTML = `
+      <input class="time-inp" type="text" value="${t}" placeholder="e.g. 8:00 AM" />
+      <button class="time-del" title="Remove">×</button>
+    `;
+    row.querySelector('.time-inp').addEventListener('input', e => {
+      const old = times[i];
+      times[i] = e.target.value;
+      // Update table row label live
+      const cell = document.querySelector(`[data-time-row="${i}"]`);
+      if (cell) cell.value = e.target.value;
+      // Remap grid keys
+      const newGrid = {};
+      Object.keys(grid).forEach(k => {
+        const newKey = k.replace(`|${old}`, `|${times[i]}`);
+        newGrid[newKey] = grid[k];
+      });
+      grid = newGrid;
+      save();
+    });
+    row.querySelector('.time-del').addEventListener('click', () => {
+      if (times.length === 1) { showToast('Need at least one time slot'); return; }
+      const tval = times[i];
+      times.splice(i, 1);
+      Object.keys(grid).forEach(k => { if (k.includes(`|${tval}`)) delete grid[k]; });
+      save(); renderAll();
+    });
+    list.appendChild(row);
+  });
+}
+
+function addTime() {
+  times.push('');
+  save(); renderAll();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.time-inp');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+/* ── SUBJECTS PANEL ── */
+function renderSubjectsPanel() {
+  const list = document.getElementById('subjectsList');
+  list.innerHTML = '';
+  subjects.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'sub-item' + (activeSubIdx === i ? ' selected' : '');
+    item.innerHTML = `
+      <div class="sub-swatch" style="background:${s.color}"></div>
+      <span class="sub-name">${s.name}</span>
+      <button class="sub-del" title="Remove">×</button>
+    `;
+    item.addEventListener('click', e => {
+      if (e.target.classList.contains('sub-del')) { delSubject(i); return; }
+      activeSubIdx = activeSubIdx === i ? null : i;
+      renderSubjectsPanel(); updateActiveBar();
+    });
+    list.appendChild(item);
+  });
+}
+
+function updateActiveBar() {
+  const bar = document.getElementById('activeSubBar');
+  if (activeSubIdx !== null && subjects[activeSubIdx]) {
+    const s = subjects[activeSubIdx];
+    bar.classList.add('show');
+    document.getElementById('activeSubColor').style.background = s.color;
+    document.getElementById('activeSubName').textContent = s.name;
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function deselectSubject() {
+  activeSubIdx = null;
+  renderSubjectsPanel(); updateActiveBar();
+}
+
+function addSubject() {
+  const name = document.getElementById('subNameInp').value.trim();
+  if (!name) { showToast('Enter a subject name'); return; }
+  const color = document.getElementById('colorPicker').value;
+  subjects.push({name, color});
+  document.getElementById('subNameInp').value = '';
+  activeSubIdx = subjects.length - 1;
+  save(); renderSubjectsPanel(); updateActiveBar();
+}
+
+function delSubject(i) {
+  const name = subjects[i].name;
+  subjects.splice(i, 1);
+  if (activeSubIdx === i) { activeSubIdx = null; }
+  else if (activeSubIdx > i) activeSubIdx--;
+  Object.keys(grid).forEach(k => { if (grid[k] && grid[k].name === name) delete grid[k]; });
+  save(); renderSubjectsPanel(); updateActiveBar(); renderGrid();
+}
+
+/* ── GRID TABLE ── */
+function renderGrid() {
+  /* HEAD */
+  const head = document.getElementById('schedHead');
+  head.innerHTML = '';
+  const hr = document.createElement('tr');
+
+  // Corner cell
+  const th0 = document.createElement('th');
+  th0.className = 'col-time';
+  th0.innerHTML = `<div class="th-time-cell"><span class="th-time-label">TIME</span></div>`;
+  hr.appendChild(th0);
+
+  days.forEach((d, i) => {
+    const th = document.createElement('th');
+    const inp = document.createElement('input');
+    inp.className = 'th-day-inp';
+    inp.type = 'text';
+    inp.value = d;
+    inp.placeholder = `Day ${i+1}`;
+    inp.setAttribute('data-day-col', i);
+    inp.addEventListener('input', e => {
+      const old = days[i];
+      days[i] = e.target.value;
+      // Sync panel
+      const panelInp = document.querySelectorAll('.day-inp')[i];
+      if (panelInp) panelInp.value = e.target.value;
+      // Remap grid
+      const newGrid = {};
+      Object.keys(grid).forEach(k => {
+        if (k.startsWith(old + '|')) {
+          newGrid[days[i] + '|' + k.split('|')[1]] = grid[k];
+        } else { newGrid[k] = grid[k]; }
+      });
+      grid = newGrid; save();
+    });
+    th.appendChild(inp);
+    hr.appendChild(th);
+  });
+  head.appendChild(hr);
+
+  /* BODY */
+  const body = document.getElementById('schedBody');
+  body.innerHTML = '';
+
+  times.forEach((time, ti) => {
+    const tr = document.createElement('tr');
+
+    // Time label cell
+    const tdTime = document.createElement('td');
+    tdTime.className = 'td-time';
+    const timeInp = document.createElement('input');
+    timeInp.className = 'time-cell-inp';
+    timeInp.type = 'text';
+    timeInp.value = time;
+    timeInp.placeholder = 'e.g. 8:00 AM';
+    timeInp.setAttribute('data-time-row', ti);
+    timeInp.addEventListener('input', e => {
+      const old = times[ti];
+      times[ti] = e.target.value;
+      // Sync panel
+      const panelInp = document.querySelectorAll('.time-inp')[ti];
+      if (panelInp) panelInp.value = e.target.value;
+      // Remap grid keys
+      const newGrid = {};
+      Object.keys(grid).forEach(k => {
+        const parts = k.split('|');
+        if (parts[1] === old) newGrid[parts[0] + '|' + times[ti]] = grid[k];
+        else newGrid[k] = grid[k];
+      });
+      grid = newGrid; save();
+    });
+    tdTime.appendChild(timeInp);
+    tr.appendChild(tdTime);
+
+    days.forEach(day => {
+      const key = `${day}|${time}`;
+      const entry = grid[key];
+      const td = document.createElement('td');
+      td.className = 'td-slot' + (entry ? ' filled' : '');
+
+      if (entry) {
+        const color = tc(entry.color);
+        td.style.background = entry.color;
+        td.innerHTML = `
+          <div class="slot-content" style="color:${color}">
+            <div class="slot-text">${entry.name}</div>
+          </div>
+          <button class="slot-x" style="color:${color}" title="Remove">×</button>
+        `;
+        td.querySelector('.slot-x').addEventListener('click', ev => {
+          ev.stopPropagation();
+          delete grid[key]; save(); renderGrid();
+        });
+      }
+
+      td.addEventListener('click', () => {
+        if (activeSubIdx !== null) {
+          const s = subjects[activeSubIdx];
+          grid[key] = {name: s.name, color: s.color};
+          save(); renderGrid();
+        } else if (!entry) {
+          showToast('Select a subject from the panel first');
+        } else {
+          delete grid[key]; save(); renderGrid();
+        }
+      });
+
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+
+  // Update meta
+  document.getElementById('canvasSub').textContent =
+    `${days.filter(d=>d).length} days · ${times.filter(t=>t).length} periods`;
+}
+
+function renderAll() {
+  renderDaysPanel();
+  renderTimesPanel();
+  renderSubjectsPanel();
+  renderGrid();
+  updateActiveBar();
+}
+
+/* ── CLEAR / RESET ── */
+function clearGrid() {
+  if (!confirm('Clear all subject assignments?')) return;
+  grid = {}; save(); renderGrid(); showToast('Grid cleared');
+}
+
+function resetToDefault() {
+  if (!confirm('Reset everything to defaults?')) return;
+  days     = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  times    = ['8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'];
+  subjects = [
+    {name:'Mathematics',color:'#2563eb'},{name:'English',color:'#c2410c'},
+    {name:'Science',color:'#16a34a'},{name:'History',color:'#7c3aed'},{name:'Art',color:'#db2777'},
+  ];
+  grid = {}; activeSubIdx = null;
+  document.getElementById('schedTitle').value = 'My Weekly Schedule';
+  updateTitle();
+  save(); renderAll(); showToast('Reset to defaults');
+}
+
+/* ── TOAST ── */
+function showToast(msg, dur=2600) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ── PDF EXPORT ── */
+async function exportPDF(btn) {
+  const title = document.getElementById('schedTitle').value || 'Schedule';
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spin"></span> Generating…';
+  btn.disabled = true;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1280px;background:#fff;padding:48px;font-family:Georgia,sans-serif;';
+
+  wrap.innerHTML = `
+    <div style="margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid #1a1916;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div>
+        <h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1a1916;letter-spacing:-0.5px;">${title}</h1>
+        <p style="font-size:11px;color:#8a877e;margin-top:4px;font-family:monospace;">${days.filter(d=>d).join(' · ')}</p>
+      </div>
+      <p style="font-size:10px;color:#b8b5ac;font-family:monospace;">Generated by Schedule Builder</p>
+    </div>
+  `;
+
+  const tbl = document.createElement('table');
+  tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px;';
+
+  // Head
+  const thead = document.createElement('thead');
+  const hrow  = document.createElement('tr');
+  const ths = ['Time', ...days.filter((_,i) => days[i] !== undefined)];
+  ths.forEach((d,i) => {
+    const th = document.createElement('th');
+    th.textContent = d;
+    th.style.cssText = `background:#1a1916;color:#fff;padding:11px 10px;font-weight:600;text-align:${i===0?'left':'center'};letter-spacing:0.8px;text-transform:uppercase;font-size:10px;${i===0?'width:90px':''}border-right:1px solid rgba(255,255,255,0.07);`;
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow); tbl.appendChild(thead);
+
+  // Body
+  const tbody = document.createElement('tbody');
+  times.forEach((time, ri) => {
+    const tr = document.createElement('tr');
+    tr.style.background = ri%2===0 ? '#f9f9f7' : '#fff';
+    const td0 = document.createElement('td');
+    td0.textContent = time;
+    td0.style.cssText = 'padding:9px 12px;font-family:monospace;font-size:10px;color:#545870;border:1px solid #e8e6e0;background:#f4f3f0;white-space:nowrap;font-weight:500;';
+    tr.appendChild(td0);
+    days.forEach(day => {
+      const entry = grid[`${day}|${time}`];
+      const td = document.createElement('td');
+      td.style.cssText = `border:1px solid #e8e6e0;height:36px;text-align:center;vertical-align:middle;`;
+      if (entry) {
+        td.style.background = entry.color;
+        td.style.color = tc(entry.color);
+        td.style.fontWeight = '700';
+        td.textContent = entry.name;
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); wrap.appendChild(tbl);
+
+  // Legend
+  if (subjects.length) {
+    const leg = document.createElement('div');
+    leg.style.cssText = 'margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;';
+    subjects.forEach(s => {
+      const c = document.createElement('span');
+      c.style.cssText = `background:${s.color};color:${tc(s.color)};padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;`;
+      c.textContent = s.name; leg.appendChild(c);
+    });
+    wrap.appendChild(leg);
+  }
+
+  document.body.appendChild(wrap);
+  try {
+    const canvas = await html2canvas(wrap, {scale:2, useCORS:true, backgroundColor:'#fff'});
+    const {jsPDF} = window.jspdf;
+    const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+    const ratio = canvas.width/canvas.height;
+    let iw=pw-16, ih=iw/ratio;
+    if(ih>ph-16){ih=ph-16;iw=ih*ratio;}
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',8,8,iw,ih);
+    pdf.save(`${title.replace(/\s+/g,'_')}.pdf`);
+    showToast('✓ PDF exported!');
+  } catch(e) { showToast('Export failed – try again'); }
+  document.body.removeChild(wrap);
+  btn.innerHTML = orig;
+  btn.disabled = false;
+}
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') deselectSubject();
+});
+document.getElementById('subNameInp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addSubject();
+});
+
+/* ── INIT ── */
+load(); renderAll();
+</script>
+</body>
+</html>
